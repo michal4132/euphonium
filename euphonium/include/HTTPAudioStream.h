@@ -3,6 +3,7 @@
 
 #include <string>
 #include <memory>
+#include <map>
 #include "HTTPStream.h"
 #include "aacdec.h"
 #include "mp3dec.h"
@@ -37,7 +38,7 @@ class HTTPAudioStream {
     ~HTTPAudioStream();
     uint32_t currentSampleRate = 0;
 
-    void querySongFromUrl(std::string url, AudioCodec audioCodec);
+    void querySongFromUrl(std::string url, AudioCodec audioCodec, std::map<std::string, std::string> headers = {});
     void decodeFrame(std::shared_ptr<MainAudioBuffer> circularBuffer);
 };
 #endif

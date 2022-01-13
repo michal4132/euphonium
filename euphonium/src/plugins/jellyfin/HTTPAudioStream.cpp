@@ -1,5 +1,5 @@
 #include "HTTPAudioStream.h"
-/*
+
 HTTPAudioStream::HTTPAudioStream()
 {
     bell::decodersInstance->ensureAAC();
@@ -13,11 +13,11 @@ HTTPAudioStream::~HTTPAudioStream()
 {
 }
 
-void HTTPAudioStream::querySongFromUrl(std::string url, AudioCodec audioCodec)
+void HTTPAudioStream::querySongFromUrl(std::string url, AudioCodec audioCodec, std::map<std::string, std::string> headers)
 {
     codec = audioCodec;
     httpStream = std::make_shared<bell::HTTPStream>();
-    httpStream->connectToUrl(url);
+    httpStream->connectToUrl(url, headers);
     decodePtr = inputBuffer.data();
     bytesLeft = 0;
     offset = 0;
@@ -131,4 +131,3 @@ void HTTPAudioStream::decodeFrame(std::shared_ptr<MainAudioBuffer> audioBuffer)
         decodeFrameAAC(audioBuffer);
     }
 }
-*/

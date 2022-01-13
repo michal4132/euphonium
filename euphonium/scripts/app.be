@@ -185,6 +185,7 @@ class App
 
         start_plugin_thread('cspot', self.getPluginByName('cspot').getBareValues())
         start_plugin_thread('webradio', self.getPluginByName('webradio').getBareValues())
+        start_plugin_thread('jellyfin', self.getPluginByName('jellyfin').getBareValues())
 
         start_plugin_thread('bluetooth', {})
         #start_plugin_thread('youtube', self.getPluginByName('youtube').getBareValues())
