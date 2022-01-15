@@ -207,5 +207,6 @@ export {
   setOTAManifest,
   connectToWifi,
   getOTAManifest,
-  triggerOTA
+  triggerOTA,
+  apiUrl
 };

@@ -42,7 +42,8 @@ public:
     void startAudioThread();
     void runTask();
     void login();
-    void playSongByID(std::string url);
+    void playSongByID(std::string trackid);
+    void updateSongInfo(std::string trackid);
     std::string jellyfinURL(std::string path);
 };
 

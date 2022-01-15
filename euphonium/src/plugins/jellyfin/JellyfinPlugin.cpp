@@ -42,7 +42,7 @@ std::string JellyfinPlugin::jellyfinURL(std::string path) {
     } else if(url.find("http://") == 0) { // if starts with http
         full_url += url;
     } else { // add https if not contains
-        full_url += "https://";
+        full_url += "http://";
         full_url += url;
     }
     return full_url + path;
@@ -115,12 +115,69 @@ void JellyfinPlugin::login() {
     login_status = 1; // login successful
 }
 
-void JellyfinPlugin::playSongByID(std::string url) {
+void JellyfinPlugin::updateSongInfo(std::string trackid){
+    if(!login_status){
+        return;
+    }
+
+    auto sourceName = std::string("jellyfin");
+
+    // request
+    struct bell::HTTPClient::HTTPRequest request = {
+		.method = bell::HTTPClient::HTTPMethod::GET,
+		.url = jellyfinURL("/Users/") + userid + std::string("/Items/") + trackid,
+		.body = nullptr,
+		.contentType = nullptr,
+		.headers = { {std::string("x-mediabrowser-token"), token} },
+		.maxRedirects = -1,
+		.dumpFs = nullptr,
+		.dumpRawFs = nullptr,
+    };
+    
+    bell::HTTPClient::HTTPResponse_t response = client->execute(request);
+
+    cJSON *response_json = cJSON_Parse(response->readToString().c_str());
+    if (response_json == NULL) {
+        return;
+    }
+    const cJSON *name_json = cJSON_GetObjectItemCaseSensitive(response_json, "Name");
+    if (!cJSON_IsString(name_json) || (name_json->valuestring == NULL)) {
+        cJSON_Delete(response_json);
+        return;
+    }
+    const cJSON *album_json = cJSON_GetObjectItemCaseSensitive(response_json, "Album");
+    if (!cJSON_IsString(album_json) || (album_json->valuestring == NULL)) {
+        cJSON_Delete(response_json);
+        return;
+    }
+    const cJSON *albumartist_json = cJSON_GetObjectItemCaseSensitive(response_json, "AlbumArtist");
+    if (!cJSON_IsString(albumartist_json) || (albumartist_json->valuestring == NULL)) {
+        cJSON_Delete(response_json);
+        return;
+    }
+
+    std::string imageUrl = jellyfinURL("/Items/") + trackid + "/Images/Primary?fillHeight=200&fillWidth=200&quality=96";
+    
+    auto event_track = std::make_unique<SongChangedEvent>(
+        name_json->valuestring, album_json->valuestring, albumartist_json->valuestring, sourceName, imageUrl);
+    this->luaEventBus->postEvent(std::move(event_track));
+    
+    auto event_state = std::make_unique<PauseChangedEvent>(false);
+    this->luaEventBus->postEvent(std::move(event_state));
+
+    EUPH_LOG(info, "jellyfin", "Song name changed");
+    cJSON_Delete(response_json);
+}
+
+void JellyfinPlugin::playSongByID(std::string trackid) {
+    if(!login_status){
+        return;
+    }
     isRunning = false;
     std::map<std::string, std::string> headers = { {std::string("x-mediabrowser-token"), token} };
 
     std::string args;
-    args += std::string("?MaxStreamingBitrate=") + std::to_string(256*1024);
+    args += std::string("?MaxStreamingBitrate=") + std::to_string(128*1024);
     args += std::string("&api_key=") + token;
     args += std::string("&UserId=") + userid;
     args += std::string("&DeviceId=") + deviceName;
@@ -130,7 +187,8 @@ void JellyfinPlugin::playSongByID(std::string url) {
     args += std::string("&AudioCodec=") + std::string("mp3");
     args += std::string("&CopyTimestamps=") + std::string("true");
 
-    radioUrlQueue.push({headers, url+args});
+    updateSongInfo(trackid);
+    radioUrlQueue.push({headers, jellyfinURL("/Audio/") + trackid + "/universal" +args});
 }
 
 void JellyfinPlugin::shutdown() {
@@ -162,7 +220,7 @@ void JellyfinPlugin::runTask() {
             status = ModuleStatus::RUNNING;
             try {
                 audioStream->querySongFromUrl(url.second, AudioCodec::MP3, url.first);
-
+                
                 while (isRunning) {
                     if (!isPaused) {
                         audioStream->decodeFrame(audioBuffer);
@@ -183,8 +241,8 @@ void JellyfinPlugin::runTask() {
                 }
             } catch (...) {
                 BELL_LOG(error, "jellyfin", "Cannot play requested radio");
-                auto source = std::string("webradio");
-                auto error = std::string("Cannot play requested station");
+                auto source = std::string("jellyfin");
+                auto error = std::string("Cannot play requested track");
                 auto event = std::make_unique<PlaybackError>(source, error);
                 this->luaEventBus->postEvent(std::move(event));
             }
