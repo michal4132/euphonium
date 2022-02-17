@@ -28,6 +28,8 @@ void CSpotPlugin::setupBindings() {
     berry->export_this("cspot_set_pause", this, &CSpotPlugin::setPause);
     berry->export_this("cspot_set_volume_remote", this,
                        &CSpotPlugin::setVolumeRemote);
+    berry->export_this("cspot_set_initial_volume", this,
+                       &CSpotPlugin::setInitialVolume);
 }
 
 void CSpotPlugin::setPause(bool pause) {
@@ -42,6 +44,14 @@ void CSpotPlugin::setVolumeRemote(int volume) {
         spircController->setRemoteVolume((int)volStep * volume);
     }
 }
+
+void CSpotPlugin::setInitialVolume(int volume) {
+    if (configMan != nullptr) {
+        double volStep = MAX_VOLUME / 100.0;
+        configMan->volume = (int)volStep * volume;
+    }
+}
+
 
 void CSpotPlugin::configurationUpdated() {
     mapConfig();
@@ -129,7 +139,6 @@ void CSpotPlugin::runTask() {
 }
 
 void CSpotPlugin::mapConfig() {
-    configMan->volume = 65535;
     configMan->deviceName = std::any_cast<std::string>(config["receiverName"]);
     std::string bitrateString =
         std::any_cast<std::string>(config["audioBitrate"]);

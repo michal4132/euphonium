@@ -221,6 +221,10 @@ class EuphoniumInstance
         print("Broadcasting volume data")
         self.broadcast_event(EVENT_VOLUME_UPDATED, volume)
     end
+
+    def get_volume()
+        return self.playback_state['volume']
+    end
 end
 
 euphonium = EuphoniumInstance()

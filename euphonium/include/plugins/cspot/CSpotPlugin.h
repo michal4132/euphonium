@@ -43,6 +43,7 @@ public:
     void configurationUpdated();
     void setPause(bool);
     void setVolumeRemote(int);
+    void setInitialVolume(int);
     void shutdown();
     void startAudioThread();
     void runTask();
