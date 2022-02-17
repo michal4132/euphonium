@@ -1,6 +1,6 @@
 class CSpotPlugin : Plugin
     def init()
-        cspot_set_initial_volume(euphonium.get_volume())
+       cspot_set_initial_volume(euphonium.playback_state.get_volume())
         self.config_schema = {
             'receiverName': {
                 'tooltip': "Speaker's name",

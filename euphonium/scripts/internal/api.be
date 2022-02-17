@@ -76,29 +76,29 @@ http.handle('GET', '/system', def (request)
 end)
 
 http.handle('GET', '/playback', def (request)
-    request.write_json(euphonium.playback_state, 200)
+    request.write_json(euphonium.playback_state.get_state(), 200)
 end)
 
 http.handle('POST', '/playback/volume', def (request)
     var body = request.json_body()
     euphonium.apply_volume(int(body['volume']))
 
-    request.write_json(euphonium.playback_state, 200)
+    request.write_json(euphonium.playback_state.get_state(), 200)
 end)
 
 http.handle('POST', '/playback/eq', def (request)
     var body = request.json_body()
     playback.set_eq(real(body['low']), real(body['mid']), real(body['high']))
-    euphonium.playback_state['eq'] = body
+    euphonium.playback_state.set_eq(real(body['low']), real(body['mid']), real(body['high']))
     euphonium.update_playback()
-    request.write_json(euphonium.playback_state, 200)
+    request.write_json(euphonium.playback_state.get_state(), 200)
 end)
 
 http.handle('POST', '/playback/status', def (request)
-    euphonium.playback_state['status'] = request.json_body()['status']
+    euphonium.playback_state.set_status(request.json_body()['status'])
     plugin = euphonium.get_plugin(euphonium.current_source)
 
-    if euphonium.playback_state['status'] == 'playing'
+    if euphonium.playback_state.get_status() == 'playing'
         plugin.on_event(EVENT_SET_PAUSE, false)
     else
         plugin.on_event(EVENT_SET_PAUSE, true)
@@ -106,5 +106,5 @@ http.handle('POST', '/playback/status', def (request)
 
     # reset buffers
     playback.empty_buffers()
-    request.write_json(euphonium.playback_state, 200)
+    request.write_json(euphonium.playback_state.get_state(), 200)
 end)

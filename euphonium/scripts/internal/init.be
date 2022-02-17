@@ -4,7 +4,7 @@ core.load("internal/plugin.be")
 core.load("internal/hooks.be")
 core.load("internal/euphonium.be")
 core.load("internal/api.be")
-core.load("internal/global_config.be")
+core.load("internal/playback_state.be")
 
 # Load plugins
 core.load("plugin/cspot.be")

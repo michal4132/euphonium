@@ -1,8 +1,8 @@
 class EuphoniumInstance
     var event_handlers
     var plugins
-    var playback_state
     var plugins_initialized
+    var playback_state
     var network_state
     var current_source
 
@@ -26,9 +26,9 @@ class EuphoniumInstance
             end,
             'statusChangedEvent': def (req)
                 if req['isPaused']
-                    self.playback_state['status'] = 'paused'
+                    self.playback_state.set_state('paused')
                 else
-                    self.playback_state['status'] = 'playing'
+                    self.playback_state.set_state('playing')
                 end
 
                 self.update_playback()
@@ -36,27 +36,15 @@ class EuphoniumInstance
             'youtubeEvent': def (ev)
                 self.get_plugin('youtube').on_event('youtube', ev)
             end,
-            'volumeChangedEvent': def (req)
-                self.apply_volume(int(req['volume']))
-            end,
             'handleConfigLoaded': def (config)
                 self.load_configuration_for(config)
+
             end,
             'hookEvent' : def (ev)
                 hooks.call(ev['hook'])
             end
         }
         self.plugins = []
-        self.playback_state = {
-            'song': {
-                'songName': 'Queue empty',
-                'artistName': '--',
-                'sourceName': '--',
-                'icon': '',
-                'albumName': '--'
-            },
-            'status': 'paused'
-        }
         self.network_state = 'offline'
     end
 
@@ -73,21 +61,21 @@ class EuphoniumInstance
     end
 
     def update_song(playback_info)
-        self.playback_state['song'] = playback_info
+        self.playback_state.state['song'] = playback_info
 
         if playback_info['sourceName'] != ''
-            self.playback_state['song']['sourceThemeColor'] = self.get_plugin(playback_info['sourceName']).theme_color
+            self.playback_state.state['song']['sourceThemeColor'] = self.get_plugin(playback_info['sourceName']).theme_color
         end
         self.update_playback()
     end
 
     def set_status(playback_status)
-        self.playback_state['status'] = playback_status
+        self.playback_state.state['status'] = playback_status
         self.update_playback()
     end
 
     def update_playback()
-        http.emit_event("playback", self.playback_state)
+        http.emit_event("playback", self.playback_state.get_state())
     end
 
     def send_notification(type, from, text, submessage)
@@ -210,14 +198,10 @@ class EuphoniumInstance
             end
         end
 
-        self.get_plugin('global_config').set_volume(volume)
+        self.playback_state.set_volume(volume)
         self.update_playback()
         print("Broadcasting volume data")
         self.broadcast_event(EVENT_VOLUME_UPDATED, volume)
-    end
-
-    def get_volume() # TODO: Move to plugin file?
-        return self.get_plugin('global_config').get_volume()
     end
 end
 
