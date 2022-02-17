@@ -55,12 +55,6 @@ class EuphoniumInstance
                 'icon': '',
                 'albumName': '--'
             },
-            'eq': {
-                'low': 0,
-                'mid': 0,
-                'high': 0
-            },
-            'volume': 50,
             'status': 'paused'
         }
         self.network_state = 'offline'
@@ -216,14 +210,14 @@ class EuphoniumInstance
             end
         end
 
-        self.playback_state['volume'] = volume
+        self.get_plugin('global_config').set_volume(volume)
         self.update_playback()
         print("Broadcasting volume data")
         self.broadcast_event(EVENT_VOLUME_UPDATED, volume)
     end
 
-    def get_volume()
-        return self.playback_state['volume']
+    def get_volume() # TODO: Move to plugin file?
+        return self.get_plugin('global_config').get_volume()
     end
 end
 
