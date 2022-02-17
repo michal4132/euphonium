@@ -26,9 +26,9 @@ class EuphoniumInstance
             end,
             'statusChangedEvent': def (req)
                 if req['isPaused']
-                    self.playback_state.set_state('paused')
+                    self.playback_state.set_status('paused')
                 else
-                    self.playback_state.set_state('playing')
+                    self.playback_state.set_status('playing')
                 end
 
                 self.update_playback()
@@ -106,6 +106,7 @@ class EuphoniumInstance
         end
 
         core.start_plugin('cspot', self.get_plugin('cspot').get_raw_config())
+        cspot_set_initial_volume(self.playback_state.get_volume())
         core.start_plugin('webradio', self.get_plugin('webradio').get_raw_config())
         core.start_plugin('bluetooth', {})
 
