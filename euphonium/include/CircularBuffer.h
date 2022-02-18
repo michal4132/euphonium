@@ -1,15 +1,15 @@
 #ifndef EUPHONIUM_CIRCULAR_BUFFER
 #define EUPHONIUM_CIRCULAR_BUFFER
 
-#include <vector>
 #include <algorithm>
 #include <mutex>
 #include <cstring>
+#include <EuphoniumLog.h>
 
 class CircularBuffer
 {
 public:
-    CircularBuffer(size_t dataCapacity);
+    CircularBuffer(uint8_t static_buffer[], uint32_t buffer_len);
 
     size_t size() const { return dataSize; }
     size_t capacity() const { return dataCapacity; }
@@ -23,7 +23,7 @@ private:
     size_t endIndex = 0;
     size_t dataSize = 0;
     size_t dataCapacity = 0;
-    std::vector<uint8_t> buffer;
+    uint8_t *buffer;
 };
 
 #endif

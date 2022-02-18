@@ -5,6 +5,7 @@
 #include <string.h>
 #ifdef ESP_PLATFORM
 #include "esp_heap_caps.h"
+#include "esp_attr.h"
 #endif
 
 std::shared_ptr<MainAudioBuffer> mainAudioBuffer;
@@ -182,16 +183,16 @@ void Core::setupBindings() {
 
 void Core::runTask() {
     EUPH_LOG(info, "core", "Audio output started");
-    std::vector<uint8_t> pcmBuf(PCMBUF_SIZE);
-
+    static uint8_t pcmBuf[PCMBUF_SIZE] EXT_RAM_ATTR;
+ 
     while (true) {
         if (audioBuffer->audioBuffer->size() > 0 && outputConnected) {
             auto readNumber =
-                audioBuffer->audioBuffer->read(pcmBuf.data(), PCMBUF_SIZE);
-            audioProcessor->process(pcmBuf.data(), readNumber);
-            currentOutput->feedPCMFrames(pcmBuf.data(), readNumber);
+                audioBuffer->audioBuffer->read(pcmBuf, PCMBUF_SIZE);
+            audioProcessor->process(pcmBuf, readNumber);
+            currentOutput->feedPCMFrames(pcmBuf, readNumber);
         } else {
-            EUPH_LOG(info, "core", "No data");
+            // EUPH_LOG(info, "core", "No data");
 #ifdef ESP_PLATFORM
             auto memUsage = heap_caps_get_free_size(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
             auto memUsage2 = heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
