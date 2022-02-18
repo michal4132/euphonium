@@ -12,6 +12,10 @@
 #include <AudioOutput.h>
 #include <BellUtils.h>
 
+#ifndef ESP_PLATFORM
+#define EXT_RAM_ATTR
+#endif
+
 typedef std::function<void(std::string)> shutdownEventHandler;
 
 /**

@@ -4,7 +4,6 @@
 #include <algorithm>
 #include <mutex>
 #include <cstring>
-#include <EuphoniumLog.h>
 
 class CircularBuffer
 {
