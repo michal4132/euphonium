@@ -8,14 +8,13 @@
 #include "esp_attr.h"
 #endif
 
-std::shared_ptr<MainAudioBuffer> mainAudioBuffer;
+// std::shared_ptr<MainAudioBuffer> mainAudioBuffer;
 std::shared_ptr<EventBus> mainEventBus;
 
 Core::Core() : bell::Task("Core", 4 * 1024, 2, 0) {
     audioBuffer = std::make_shared<MainAudioBuffer>();
     luaEventBus = std::make_shared<EventBus>();
     mainPersistor = std::make_shared<ConfigPersistor>();
-    mainAudioBuffer = audioBuffer;
     mainEventBus = luaEventBus;
 
     audioProcessor = std::make_shared<AudioProcessors>();
@@ -99,12 +98,12 @@ void Core::handleScriptingThread() {
 }
 
 void Core::selectAudioOutput(std::shared_ptr<AudioOutput> output) {
-    mainAudioBuffer->audioOutput = output;
+    audioBuffer->audioOutput = output;
     currentOutput = output;
     this->outputConnected = true;
 }
 
-void Core::emptyBuffers() { audioBuffer->audioBuffer->emptyBuffer(); }
+void Core::emptyBuffers() { audioBuffer->clearBuffer(); }
 
 void Core::loadScript(std::string file) {
     loader->loadScript(file, berry);
@@ -186,9 +185,8 @@ void Core::runTask() {
     static uint8_t pcmBuf[PCMBUF_SIZE] EXT_RAM_ATTR;
  
     while (true) {
-        if (audioBuffer->audioBuffer->size() > 0 && outputConnected) {
-            auto readNumber =
-                audioBuffer->audioBuffer->read(pcmBuf, PCMBUF_SIZE);
+        if (audioBuffer->size() > 0 && outputConnected) {
+            auto readNumber = audioBuffer->read(pcmBuf, PCMBUF_SIZE);
             audioProcessor->process(pcmBuf, readNumber);
             currentOutput->feedPCMFrames(pcmBuf, readNumber);
         } else {

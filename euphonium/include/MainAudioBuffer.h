@@ -23,82 +23,98 @@ typedef std::function<void(std::string)> shutdownEventHandler;
  * Lacks logic, only passes the calls further down
  */
 class MainAudioBuffer {
-  private:
-  public:
+    public:
+        std::shared_ptr<AudioOutput> audioOutput;
+        std::mutex accessMutex;
+        shutdownEventHandler shutdownListener;
+        uint32_t sampleRate = 0;
 
-    std::shared_ptr<AudioOutput> audioOutput;
-    std::shared_ptr<CircularBuffer> audioBuffer;
-    std::mutex accessMutex;
-    shutdownEventHandler shutdownListener;
-    uint32_t sampleRate = 0;
-
-    MainAudioBuffer() {
-        // allocate static buffer on stack
-        static uint8_t buffer[AUDIO_BUFFER_SIZE] EXT_RAM_ATTR;
-        audioBuffer = std::make_shared<CircularBuffer>(buffer, AUDIO_BUFFER_SIZE);
-    }
-
-    /**
-     * Sends an event which reconfigures current audio output
-     * @param format incoming sample format
-     * @param sampleRate data's sample rate
-     */
-    void configureOutput(AudioOutput::SampleFormat format, uint32_t sampleRate) {
-        if (this->sampleRate != sampleRate) {
-            this->sampleRate = sampleRate;
-            audioOutput->configureOutput(format, sampleRate);
+        MainAudioBuffer() {
+            // allocate static buffer
+            static uint8_t buffer[AUDIO_BUFFER_SIZE] EXT_RAM_ATTR;
+            audioBuffer = std::make_shared<CircularBuffer>(buffer, AUDIO_BUFFER_SIZE);
         }
-    }
 
-    /**
-     * Clears input buffer, to be called for track change and such
-     */
-    void clearBuffer() { audioBuffer->emptyBuffer(); }
-
-    /**
-     * Locks access to audio buffer. Call after starting playback
-     */
-    void lockAccess() {
-        clearBuffer();
-        this->accessMutex.lock();
-    }
-
-    /**
-     * Frees access to the audio buffer. Call during shutdown
-     */
-     void unlockAccess() {
-         clearBuffer();
-         this->accessMutex.unlock();
-     }
-
-    /**
-     * Prompts every plugin except for one provided to shut down and release mutex
-     * @param other name of plugin calling the function
-     */
-    void shutdownExcept(std::string other) {
-        clearBuffer();
-        this->shutdownListener(other);
-    }
-
-    /**
-     * Write audio data to the main buffer
-     * @param data pointer to raw PCM data
-     * @param bytes number of bytes to be read from provided pointer
-     * @return number of bytes read
-     */
-    size_t write(const uint8_t *data, size_t bytes) {
-        size_t bytesWritten = 0;
-        while (bytesWritten < bytes)
-        {
-            auto write = audioBuffer->write(data + bytesWritten, bytes - bytesWritten);
-            bytesWritten += write;
-            if (write == 0) {
-                BELL_SLEEP_MS(10);
+        /**
+            * Sends an event which reconfigures current audio output
+            * @param format incoming sample format
+            * @param sampleRate data's sample rate
+            */
+        void configureOutput(AudioOutput::SampleFormat format, uint32_t sampleRate) {
+            if (this->sampleRate != sampleRate) {
+                this->sampleRate = sampleRate;
+                audioOutput->configureOutput(format, sampleRate);
             }
         }
 
-        return bytesWritten;
-    }
+        /**
+            * Clears input buffer, to be called for track change and such
+            */
+        void clearBuffer() { audioBuffer->emptyBuffer(); }
+
+        /**
+            * Locks access to audio buffer. Call after starting playback
+            */
+        void lockAccess() {
+            clearBuffer();
+            this->accessMutex.lock();
+        }
+
+        /**
+            * Frees access to the audio buffer. Call during shutdown
+            */
+            void unlockAccess() {
+                clearBuffer();
+                this->accessMutex.unlock();
+            }
+
+        /**
+            * Prompts every plugin except for one provided to shut down and release mutex
+            * @param other name of plugin calling the function
+            */
+        void shutdownExcept(std::string other) {
+            clearBuffer();
+            this->shutdownListener(other);
+        }
+
+        /**
+            * Write audio data to the main buffer
+            * @param data pointer to raw PCM data
+            * @param bytes number of bytes to be read from provided pointer
+            * @return number of bytes read
+            */
+        size_t write(const uint8_t *data, size_t bytes) {
+            size_t bytesWritten = 0;
+            while (bytesWritten < bytes)
+            {
+                auto write = audioBuffer->write(data + bytesWritten, bytes - bytesWritten);
+                bytesWritten += write;
+                if (write == 0) {
+                    BELL_SLEEP_MS(10);
+                }
+            }
+
+            return bytesWritten;
+        }
+        /**
+            * Read audio data to the main buffer
+            * @param data pointer to raw PCM data
+            * @param bytes number of bytes to be read from provided pointer
+            * @return number of bytes read
+            */
+        size_t read(uint8_t *data, size_t bytes) {
+            return audioBuffer->read(data, bytes);
+        }
+
+        /**
+            * Get size of audio data in the main buffer
+            * @return number of bytes in buffer
+            */
+        size_t size() {
+            return audioBuffer->size();
+        }
+    private:
+        std::shared_ptr<CircularBuffer> audioBuffer;
 };
 
 #endif
